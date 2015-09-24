@@ -289,11 +289,11 @@ defmodule Examples do
     fun.(value, acc)
   end
 
-  def add_fac_info_to_list({n, factorial, sum_of_digits} = item, []) do
+  def add_fac_info_to_list({n, factorial, sum_of_digits}, []) do
     {sum_of_digits |> Integer.to_string |> String.length, [{n, factorial, sum_of_digits, sum_of_digits}|[]]}
   end
 
-  def add_fac_info_to_list({n, factorial, sum_of_digits} = item, {max_diff_length, [{_h_n, _h_factorial, h_sum_of_digits, _h_difference}|_t] = list}) do
+  def add_fac_info_to_list({n, factorial, sum_of_digits}, {max_diff_length, [{_h_n, _h_factorial, h_sum_of_digits, _h_difference}|_t] = list}) do
     difference = sum_of_digits - h_sum_of_digits
     {max_of(difference |> Integer.to_string |> String.length, max_diff_length), [{n, factorial, sum_of_digits, difference}|list]}
   end
@@ -308,5 +308,129 @@ defmodule Examples do
     else
       y
     end
+  end
+
+  defp add_offset(list, n) when is_list(list) and is_integer(n) and n > 0 do
+    add_offset([0|list], n-1)
+  end
+
+  defp add_offset(list, 0) when is_list(list) do
+    list
+  end
+
+  defp add_lcn_tail([h1|t1], [h2|t2], res) do
+    val = h1 + h2
+    add_lcn_tail(t1, t2, [val|res])
+  end
+
+  defp add_lcn_tail([], [h|t], res) do
+    add_lcn_tail([], t, [h|res])
+  end
+
+  defp add_lcn_tail([h|t], [], res) do
+    add_lcn_tail(t, [], [h|res])
+  end
+
+  defp add_lcn_tail([], [], res) do
+    res |> reverse |> normalize_lcn |> reverse
+  end
+
+  def add_lcn(l1, l2) when is_list(l1) and is_list(l2) do
+    add_lcn_tail(l1, l2, [])
+  end
+
+  defp sum_lcn_list_tail([hl|tl], []) do
+    sum_lcn_list_tail(tl, hl)
+  end
+
+  defp sum_lcn_list_tail([hl|tl], res) when is_list(res) do
+    sum_lcn_list_tail(tl, add_lcn(hl, res))
+  end
+
+  defp sum_lcn_list_tail([], res) when is_list(res) do
+    res
+  end
+
+  def sum_lcn_list(lcn_list) when is_list(lcn_list) do
+    sum_lcn_list_tail(lcn_list, [])
+  end
+
+  # defp mul_lcn_tail([hl|tl], [], offset, res) when is_list(hl) do
+  #   mul_lcn_tail(tl, hl, offset, res)
+  # end
+
+  defp mul_lcn_tail([h|t], list, offset, res_list) when is_list(list) and is_integer(offset) do
+    mul_lcn_tail(t, list, offset+1, multiply(h, list) |> add_offset(offset) |> add_lcn(res_list))
+  end
+
+  defp mul_lcn_tail([], _, _, res_list) when is_list(res_list) do
+    res_list
+  end
+
+  def mul_lcn(l1, l2) when is_list(l1) and is_list(l2) do
+    mul_lcn_tail(l1, l2, 0, [])
+  end
+
+  defp num_to_lcn_tail(num, lcn) when is_integer(num) and num > 0 and is_list(lcn) do
+    num_to_lcn_tail(div(num, 10), [rem(num, 10)|lcn])
+  end
+
+  defp num_to_lcn_tail(0, lcn) when is_list(lcn) do
+    lcn
+  end
+
+  def num_to_lcn(num) when is_integer(num) do
+    num_to_lcn_tail(num, [])
+  end
+
+  def multiply(digit, list) when is_list(list) do
+    multiply_tail(digit, list, [])
+  end
+
+  defp multiply_tail(digit, [h|t], res) do
+    multiply_tail(digit, t, [digit*h|res])
+  end
+
+  defp multiply_tail(_, [], res) do
+    res |> reverse |> normalize_lcn |> reverse
+  end
+
+  defp normalize_lcn_tail([h|t], transfer_digit, res) do
+    new_val = h + transfer_digit
+    normalize_lcn_tail(t, div(new_val, 10), [rem(new_val, 10)|res])
+  end
+
+  defp normalize_lcn_tail([], 0, res) do
+    res
+  end
+
+  defp normalize_lcn_tail([], transfer_digit, res) when is_integer(transfer_digit) and transfer_digit > 0 do
+    normalize_lcn_tail([], div(transfer_digit, 10), [rem(transfer_digit, 10)|res])
+  end
+
+  defp normalize_lcn(list) when is_list(list) do
+    normalize_lcn_tail(list, 0, [])
+  end
+
+  def fac_lcn(n, fun \\ &(&1)) when is_integer(n) and n > 0 and is_function(fun) do
+    fac_lcn_tail(n, [1|[]], fun)
+  end
+
+  defp fac_lcn_tail(n, lcn, fun) when is_integer(n) and n > 0 and is_list(lcn) do
+    fun.(lcn)
+    lcn_string = lcn |> reverse |> lcn_to_string
+    IO.puts "#{n} <--> #{lcn_string}"
+    fac_lcn_tail(n-1, n |> num_to_lcn |> reverse |> mul_lcn(lcn), fun)
+  end
+
+  defp fac_lcn_tail(0, lcn, fun) do
+    fun.(lcn)
+    lcn_string = lcn |> reverse |> lcn_to_string
+    IO.puts "0 <--> #{lcn_string}"
+    lcn
+  end
+
+  def lcn_to_string(lcn) when is_list(lcn) do
+    lcn |> Enum.map(&(&1 |> Integer.to_string)) |> Enum.join
   end
 end
