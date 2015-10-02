@@ -39,6 +39,34 @@ defmodule Examples do
     t
   end
 
+  defp zip_tail([h1|t1], [h2|t2], fun, res) when is_function(fun) and is_list(res) do
+    zip_tail(t1, t2, fun, [fun.(h1, h2)|res])
+  end
+
+  defp zip_tail([], _, _, res) when is_list(res) do
+    res |> reverse
+  end
+
+  defp zip_tail(_, [], _, res) when is_list(res) do
+    res |> reverse
+  end
+
+  def zip(l1, l2, fun \\ &({&1, &2})) do
+    zip_tail(l1, l2, fun, [])
+  end
+
+  defp gen_seq_tail(initial_value, gen_fun, counter, res) when is_function(gen_fun) and is_integer(counter) and counter > 0 and is_list(res) do
+    gen_seq_tail(gen_fun.(initial_value), gen_fun, counter - 1, [initial_value|res])
+  end
+
+  defp gen_seq_tail(value, _, 0, res) when is_list(res) do
+    [value|res] |> reverse
+  end
+
+  def gen_seq(initial_value, gen_fun, counter) when is_function(gen_fun) and is_integer(counter) and counter > 0 do
+    gen_seq_tail(initial_value, gen_fun, counter, [])
+  end
+
   def get_nth(_n, []) do
     []
   end
